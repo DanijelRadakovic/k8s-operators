@@ -403,7 +403,7 @@ make manifest generate
 
 - Kao što je već napomenuto, kontoler je petlja koja čega na izmene koje su se primenile na `Dojo` objekte i procesira u skaldu sa nekom logikom.
 
-- Ta petlja se naziva `reconcile` petlja  a struktura koja implementira petju se naziva `Reconciler`.
+- Ta petlja se naziva *reconcile* petlja a struktura koja implementira petju se naziva *Reconciler*.
 
 ```go
 // DojoReconciler reconciles a Dojo object
@@ -429,7 +429,7 @@ func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 ```
 
-== Implementacija kontolera (dummy)
+== Implementacija kontolera (v1)
 
 ```go
 func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -537,15 +537,45 @@ CredentialsRef: {dojo default}
 - Primeniti ih na cluster pomoću `kubectl apply -f config/samples/core_v1_dojo.yaml`.
 - Ili koristiti kustomize `kubectl apply -k config/samples`.
 
+== Implementacija operatora (v2)
+
+- Ustanovili smo da se `reconcile` petlja okida na promene `Dojo` objekata.
+
+- Sada želimo da unapredimo petlju tako da kreiramo Deployment za Dojo aplikaciju sa brojem replika definisanim u `Spec` objekta.
+
+- Važno je napomenuti da je Reconciler *stateless*. Ne pamti stanja iz prethodnog izvršavanja.
+
+- S obzirom na to da se događaji mogu duplicirati, važno je da se Reconciler implementira da bude *idempotentan*.
+
+/ Idempotency: Idempotency is the property where an operation can be applied multiple times without changing the result beyond the initial application.
+
+== Implementacija operatora (v2)
+
+- U slučaju da se ne ispoštuje idempotentnost, može doći do beskonačne petlje.
+
+- Način kojim se Reconciler pravi idempotetnim jeste korišćenjem statusa objekta. 
+
+- Na osnovu statusa objekta Reconciler zna u kojoj fazi procesiranja objekta se nalazi i kako dalje da nastavi sa procesiranjem objekta.
+
+- Zbog toga je bitno dobro modelovati `Status` resursa.
+
+- Bitno je napomenuti da se ceo Kubernetes bazira na *level-based* dizajnu umesto *edge-based*.
+
+== Implementacija operatora (v2)
+
+/ Level-based design: The system must operate correctly given the desired state and the current/observed state, regardless of how many intermediate state updates may have been missed. Edge-triggered behavior must be just an optimization #link("https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/principles.md#control-logic")[(doc)].
+
+- Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta. Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja. 
+
+- zlatno pravilo
+
 == Upravljanje `reconcile` petljom
 
-napravi prvo loop koji samo ispisjuje, i ne to bude veryija v0 na githubu.
-zatim uradi instalaciju CRD i reci koji RESTful path-ovi su kreirani. Probaj te resurse da preko kubectl i curl da pozoves
+
 
 - ne sme da se radi wait() zato sto reconcile petlja ima timeout, drugi requestovi iz working queue ne mogu da se obradjuju. Dovoljno sam blokirajuce akcje blokiraju, samo jos ovo treba
 - S obzirom da smo definisali validaciju u CRD, ne treba opet da radimo validaciju u reconcile petrlji.
 
-Reconciler je stateleess. To ne pamti sta se desilo prosli izvrsavanje i samim tim mora se napraviti da bude idempotent. U suprotnom moze da ba bude beskonacni loop.
 Ima queue promena koje su se desile, i cim posotji queue treba da se napravi da bude idempotent.
 
 U queue se cuva namespace/name  i radi deduplication kako bi smanjio frekveciju promena. Na primer u jednom loop-u, promenio se shop1/shop resource 10 puta, umesto da u queue bude 10 elemenata postojace samo jedan jer ce se duplikati ukloniti.
@@ -579,9 +609,3 @@ Pisanje testova
 - Od posebnog značaja je `Database` resurs koji omogućava kreiranje baze unutar klustera i `Secret` objekta sa odgovarajućim kredencijalima.
 
 - Sve što naj je ostalo jeste da proširimo `Spec` sekciju u kojoj je moguće definisati tip baze koji se koristi i naziv `Secret` objekta.
-
-== Nadogradnja `Spec` sekcije
-
-dodaj kako izgleda golang kod
-
-dodaj kako izgleda yaml primer
