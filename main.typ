@@ -535,7 +535,7 @@ CredentialsRef: {dojo default}
 
 - Primere za testiranje operatora možemo definisati u `config/samples/core_v1_dojo.yaml`.
 - Primeniti ih na cluster pomoću `kubectl apply -f config/samples/core_v1_dojo.yaml`.
-- Ili koristiti kustomize `kubectl apply -k config/samples`
+- Ili koristiti kustomize `kubectl apply -k config/samples`.
 
 == Upravljanje `reconcile` petljom
 
