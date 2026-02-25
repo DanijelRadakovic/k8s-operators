@@ -447,6 +447,28 @@ func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 ```
 
+== Implementacija kontolera (v1)
+
+- `Reconcile` metoda ima jedan parameter (zanemajurući `context`) `ctrl.Request`. `ctrl.Request` sadrži `name` i `namespace` `Dojo` objekta nad kojim se desila izmena i treba da se procesira od strane Reconcilera.
+
+- Pomoću `name` i `namepsace` (i `Kind`) možemo jedinstveno da identifikujemo bilo koji objekat unutar clustera. Zbog toga se često u samoj biblioteci #link("https://pkg.go.dev/k8s.io/apimachinery/pkg/types#NamespacedName")[NamespacedName] provlači u drugim strukturama.
+
+- Na onsovu `name` i `namespace` moramo da dobavimo kompletan objekat iz klastera. Kad je objekat dobaljen, treba ga procesirati na osnovu `Spec` i `Status` vrednosti objekta.
+
+== Implementacija kontolera (v1)
+
+- Dobavljanje se radi pomoću `r.Get(ctx, req.NamespacedName, &corev1.Dojo)`. 
+
+- Ukoliko nije pronađen to znači da se desilo brisanje objekta iz klustera i nema potrebe sa daljem procesirajem. Time završavamo _reconcile_ petlju.
+
+- Za uspešno završavanje _reconcile_ petlje neophodno je vratiti `ctrl.Result{}, nil`. 
+
+- Za neuspešno izvršavanje, bitno je vratiti `error` koji nije `nil`.
+
+- Zbog toga slučaj brisanja objekata koristimo pomoćnu metodu `client.IgnoreNotFound(err)`. 
+
+- Reconciler u pozadini koristi `client.Client` pa se njegove metode mogu koristi u _reconcile_ petlji. 
+
 == Instalacija CRD i pokretanje operatora
 
 - Imamo jednostavnu implementaciju kontolera, samim tim smo spremni da instaliramo CRD i pokrenemo operator u lokalu.
@@ -539,7 +561,7 @@ CredentialsRef: {dojo default}
 
 == Implementacija operatora (v2)
 
-- Ustanovili smo da se `reconcile` petlja okida na promene `Dojo` objekata.
+- Ustanovili smo da se _reconcile_ petlja okida na promene `Dojo` objekata.
 
 - Sada želimo da unapredimo petlju tako da kreiramo Deployment za Dojo aplikaciju sa brojem replika definisanim u `Spec` objekta.
 
@@ -565,23 +587,74 @@ CredentialsRef: {dojo default}
 
 / Level-based design: The system must operate correctly given the desired state and the current/observed state, regardless of how many intermediate state updates may have been missed. Edge-triggered behavior must be just an optimization #link("https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/principles.md#control-logic")[(doc)].
 
-- Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta. Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja. 
+- Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta (npr. korisnik je pomoću `kubectl` 5 puta izmenilo objekat). Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja.
 
-- zlatno pravilo
+- Pogledati Reconciler implementaciju. 
+
+== Implementacija operatora (v2)
+
+- Prilikom implentacije neophodno je identifikovati greške od kojih se ne može oporativit. I skladu sa tim greškama treba `Status` objekta izmenuti na odgovarajući način. Odnosno podesiti `Reason` i `Status`(`true/false`) vrednosti za određene `Conditions`.
+
+- Na primer, od `409 Conflict` greške se može oporaviti jer naglašava da ne radimo sa najnovijom verzijom objekta, i treba opet okinuti petlju koja će raditi sa najnovijom verzijom. 
+
+- Međutim, od greške koja nastaje da se Deployment ne može kreirati jer je nešto pogrešno konfigurisano je greška on koje se Reconciler ne može opraviti. 
+
+== Implementacija operatora (v2)
+
+- U našoj implementaciji postoje 3 `Conditions`: `Available`, `Progressing`, `Degraded`.
+
+- `Available` je `true` ako postoji sa barem jedna replika Dojo aplikacije, u suprotnom je `false`.
+
+- `Degraded` je `true` ukoliko je nastala greška od koje nema oporavka, u suprotnom je `false`.
+
+- `Progressing` je `true` ukoliko Reconciler procesira objekat u željeno stranje.
+
+- `Degraded` i `Progressing` su međusovno isključivi, odnoston ukoliko je `Degraded=True`, onda mora `Progressing=False` i obrnuto. 
+
+- Zbog toga postoje metode `setUnrecoverableErrorStatus` koja postaljva `Degraded=True,Progressing=False`, i njena inverzna metoda `setProgressStatus`.
+
+== Implementacija operatora (v2)
+
+- `Available` nije međusobno isključiv sa `Degraded` i `Progressing`:
+    - `Available=True,Progressing=True`: Postoje 3 replike, a Reconciler radi na tome da ih skalira na 5 jer je tako definisano u `Spec` objekta.
+    - `Available=True,Degraded=True`: Postoje 3 replike, a žejeno stanje je 5 replika. U međuvremenu se desila greška od kojeg nema oporavka.
+
+- Reconciler ne sme da menja `Spec` objekta. Sme da menja samo `Status` (kasnije ćemo videti `Scale` i `Finalizer`).
+
+== Implementacija operatora (v2)
+
+- U petlji ne bi trebali da u imate logiku koja čega resurs da se kreira (npr. EC2 istanca, Discord kanal). 
+
+- Svaka petlja ima `timeout` koji kada istekne prekine isršavanje te iteracije.
+
+- Takođe ostali zahtevi se ne mogu procesirati dok se iteracija te petlje na završi (ukoliko niste podeseili `concurency`).
+
+- Pametnije bi bilo da završite sa iteracijom petlje i okinete petlju ponovo nakog određenog vremana sa `ctrl.Request{After: 30 * Seconds}`
+
+== Implementacija operatora (v2)
+
+- *Zlatno pravilo*: U jednoj iteraciji petlje može se raditi samo jedna izmena objekta. 
+
+- API Server ima evidenciju trenutne verzije svakog objekta. Verzija objekta se nalazi `metadata.resourceVersion`. 
+ 
+- Svaka izmena objekta (bilo `Spec` ili `Status`) povećava veriju objekta. 
+ 
+- Ukoliko se na API Server pošalje objekat (pomoću `r.Update()`) koji nema najnoviju verziju, API Server vraća `409 Confilct` grešku.
+
+- Zbog toga je dobra praksa da se posle svakog `r.Update()`, uradi provera `!apierros.IsConflic(err)` kako bi ignorisali tu grešku i opet okinuli petlju.
+
+- Sasvim je normalno da se _reconcile_ petlja više puta okine kako bi se došlo do željeneog stanja. 
 
 == Upravljanje `reconcile` petljom
 
+Exponential Backoff Requeue
 
-
-- ne sme da se radi wait() zato sto reconcile petlja ima timeout, drugi requestovi iz working queue ne mogu da se obradjuju. Dovoljno sam blokirajuce akcje blokiraju, samo jos ovo treba
-- S obzirom da smo definisali validaciju u CRD, ne treba opet da radimo validaciju u reconcile petrlji.
 
 Ima queue promena koje su se desile, i cim posotji queue treba da se napravi da bude idempotent.
 
 U queue se cuva namespace/name  i radi deduplication kako bi smanjio frekveciju promena. Na primer u jednom loop-u, promenio se shop1/shop resource 10 puta, umesto da u queue bude 10 elemenata postojace samo jedan jer ce se duplikati ukloniti.
 Nacin kako da se napravi da reconciler bude idempotent jeste da bude da se koristi status.
 
-Ne bi trebao da controller dira Spec. Samo status.
 Subresursi za /status i /scale
 
 Da bi smo na pravilan način implenetirali `reconcile` petlju, moramo prvo bolje da znamo kako API Server i ostali mehanizmi funkcionišu u pozadini.
