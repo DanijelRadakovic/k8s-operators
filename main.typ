@@ -589,11 +589,13 @@ CredentialsRef: {dojo default}
 
 - Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta (npr. korisnik je pomoću `kubectl` 5 puta izmenilo objekat). Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja.
 
-- Pogledati Reconciler implementaciju. 
+- Pogledati Reconciler implementaciju. TODO
 
 == Implementacija operatora (v2)
 
-- Prilikom implentacije neophodno je identifikovati greške od kojih se ne može oporativit. I skladu sa tim greškama treba `Status` objekta izmenuti na odgovarajući način. Odnosno podesiti `Reason` i `Status`(`true/false`) vrednosti za određene `Conditions`.
+- Prilikom implentacije neophodno je identifikovati greške od kojih se Reconciler ne može oporativit. 
+
+- U skladu sa tim greškama treba `Status` objekta izmenuti na odgovarajući način. Odnosno podesiti `Reason` i `Status`(`true/false`) vrednosti za određene `Conditions`.
 
 - Na primer, od `409 Conflict` greške se može oporaviti jer naglašava da ne radimo sa najnovijom verzijom objekta, i treba opet okinuti petlju koja će raditi sa najnovijom verzijom. 
 
@@ -644,6 +646,20 @@ CredentialsRef: {dojo default}
 - Zbog toga je dobra praksa da se posle svakog `r.Update()`, uradi provera `!apierros.IsConflic(err)` kako bi ignorisali tu grešku i opet okinuli petlju.
 
 - Sasvim je normalno da se _reconcile_ petlja više puta okine kako bi se došlo do željeneog stanja. 
+
+== Implementacija operatora (v2)
+
+dijabram kako funkcione API server, etcd, client, informer, workque itd
+
+== Implementacija operatora (v2)
+
+- Ownership nad deploymentom.
+
+- Objekat moze da ima samo jednog ownership parenta.
+
+- Optimizujeme watch promena, samim tim optimizujemo memoriji jer se smanjuje velicina cache
+- omogucava nam brisanje,
+
 
 == Upravljanje `reconcile` petljom
 
