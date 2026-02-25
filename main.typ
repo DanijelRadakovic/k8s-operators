@@ -589,6 +589,9 @@ CredentialsRef: {dojo default}
 
 - Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta (npr. korisnik je pomoću `kubectl` 5 puta izmenilo objekat). Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja.
 
+- Postoje 3 povratne vrednosti kojima se vraca rezultat u `Reconcile` metodi:
+    - 
+
 - Pogledati Reconciler implementaciju. TODO
 
 == Implementacija operatora (v2)
