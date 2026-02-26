@@ -1,4 +1,5 @@
 #import "lib.typ": *
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 
 #show: slides.with(
   title: "Kubernetes Operatori",
@@ -11,7 +12,7 @@
 )
 
 #set raw(theme: "goldfish.tmTheme")
-
+#set figure(supplement: [Slika])
 
 = Uvod
 
@@ -25,15 +26,15 @@
     - Korišćenjem *Custom Resource Definition* (CRD) i implementacijom operatora za definisane CRD-jeve.
     - Konfiguracijom #link("https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/")[Aggregation Layer]-a.
 
-- Mogućnost proširivanje je glavna prednost Kubernetes-a u odnosu na druge orkestratore. Na ovaj način možemo registrovati svoje komponente sistema kojima će upravljati Kubernetes. 
+- Mogućnost proširivanje je glavna prednost Kubernetesa u odnosu na druge orkestratore. Na ovaj način možemo registrovati svoje komponente sistema kojima će upravljati Kubernetes.
 
-- Takođe, svoje komponente sistema možete integrasiti sa alatatima i rešenjima koji su deo Kuberenetes-ovog ekosistema.
+- Takođe, svoje komponente sistema možete integrasiti sa alatatima i rešenjima koji su deo Kuberenetesovog ekosistema.
 
 == Proširivanje Kubernetes-a
 
-- Postoje popriličan broj alata u Kubernetes-ovom ekosistemu koji se zasnivaju na ovoj proširivosti. 
+- Postoje popriličan broj alata u Kubernetesovom ekosistemu koji se zasnivaju na ovoj proširivosti.
 
-- Među najpoznatijima je #link("https://www.crossplane.io/")[Crossplain], koji omogućava da pomoću Kubernetes-a upravljate infrastrukturoma na različitim Cloud provajderima.
+- Među najpoznatijima je #link("https://www.crossplane.io/")[Crossplain], koji omogućava da pomoću Kubernetesa upravljate infrastrukturoma na različitim Cloud provajderima.
 
 - Na primer, pomoću Crossplain alata možete upravljati EC2 instancom na AWS nalogu.
 
@@ -74,7 +75,7 @@
 
 / Operator Pattern: The #link("https://kubernetes.io/docs/concepts/extend-kubernetes/operator/")[Operator pattern] combines custom resources and custom controllers.
 
-- *Primer operatora*: Hoćemo da koristimo Discord za notifikacije ali da se kreiranje servera, grupa i kanala radi preko Kubernetes-a.
+- *Primer operatora*: Hoćemo da koristimo Discord za notifikacije ali da se kreiranje servera, grupa i kanala radi preko Kubernetesa.
 
 - Posotjala bi 3 resursa: `DiscordServer`, `DiscordGroup`, `DiscordChannel`.
 
@@ -82,7 +83,7 @@
 
 == Primeri i implementacije operatora
 
-- Konkretne implementacije operatora: 
+- Konkretne implementacije operatora:
     - #link("https://prometheus-operator.dev/")[Prometheus Operator],
     - #link("https://www.mongodb.com/docs/kubernetes/current/")[MongoDB Operator],
     - #link("https://cloudnative-pg.io/")[CloudNativePG],
@@ -93,13 +94,13 @@
     - #link("https://sdk.operatorframework.io/")[Operator SDK] (Java),
     - #link("https://kube.rs/")[kube-rs] (Rust).
     - #link("https://kubernetes.io/docs/concepts/extend-kubernetes/operator/#writing-operator")[ostali].
-    
+
 
 = Kubebuilder
 
 == Uvod
 
-- U konrektnim primerimara radimo implementaciju operatora za #link("https://github.com/DanijelRadakovic/dojo")[Dojo] aplikaciju. Alarmi aplikacije se prikazuju na Discord kanal.
+- U konrektnim primerimara radimo implementaciju operatora za #link("https://github.com/DanijelRadakovic/dojo")[Dojo] aplikaciju. Alarmi aplikacije se prikazuju na Discord kanalu.
 
 - Takođe, želimo da omogućimo korisnicima dinamičko kreiranje Dojo aplikacije i njenih komponenti.
 
@@ -109,14 +110,14 @@
     - `DiscordGroup`: upravlja Discord grupom.
     - `DiscordChannel`: upravlja Discord text kanalom.
 
-- Implementacija operatora je dostupna #link("https://github.com/DanijelRadakovic/dojo-operator")[ovde].
+- Implementacija operatora je dostupna #link("https://github.com/DanijelRadakovic/dojo-operator")[ovde]. Postoje 4 verzije (`v1`, `v2`, `v3`, `v4`) i svaka verzija predsavlja nadogradnju prethodne.
 
 == Podešavanje okruženja
 
-- Instalirati Go, verzije `>=1.25.6`.
-- Instalirati Kubebuilder, verzije `>=4.11.0`.
-- Instalirati #link("https://k3d.io/stable/")[k3d], verzije `>=5.8.3`.
-- Namesiti bash completion:
+- Instalirati Go verziju `>=1.25.6`.
+- Instalirati Kubebuilder verziju `>=4.11.0`.
+- Instalirati #link("https://k3d.io/stable/")[k3d] verziju `>=5.8.3`.
+- Namesiti _bash_ completion:
 
 ```bash
 sudo sh -c 'k3d completion bash > /etc/bash_completion.d/k3d'
@@ -145,7 +146,7 @@ k3d cluster create --config cluster.yaml
 ```bash
 kubebuilder init --domain jutsu.com --project-name dojo-operator --repo github.com/DanijelRadakovic/dojo-operator
 ```
-- `--domain`: Osnova za API Group resursa. U Kubernetesu, puni naziv grupe se formira kao `<group-name>.<domain>`. Korišćenje domena u osigurava jedinstvenost unutar bilo kog klastera.
+- `--domain`: Osnova za API Group resursa. U Kubernetesu, puni naziv grupe se formira kao `<group-name>.<domain>`. Korišćenje domena osigurava jedinstvenost unutar bilo kog klastera.
     - Primeri naziva grupa: `core.jutsu.com`, `billing.jutsu.com`.
 
 - `--repo`: Naziv Go modula.
@@ -156,28 +157,28 @@ kubebuilder init --domain jutsu.com --project-name dojo-operator --repo github.c
 
 - Želimo da definišemo `Dojo` _custom_ resurs i omogućimo upravljanje preko Kubernetesa.
 
-- Da bi to postigli treba da: 
-    - kreiramo Custom Resource Definition (CRD) za `Dojo` resurs, 
+- Da bi to postigli treba da:
+    - kreiramo Custom Resource Definition (CRD) za `Dojo` resurs,
     - kontoler koji će upravljati `Dojo` objektima.
 
 == Custom Resource Definition (CRD)
 
 - Za definisanje custom resursa koristi se #link("https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#create-a-customresourcedefinition")[Custom Resource Definition (CRD)] resurs.
 
-- To je tip resursa koji kreira RESTful resource path i OpenAPI v3.0 šemu na API Serveru koju koristi za validaciju REST zahteva. 
+- To je resurs koji kreira _RESTful resource path_ i OpenAPI v3.0 šemu na API Serveru. Šema se koristi za validaciju REST zahteva.
 
-- Samim tim mnoge funkcionalnosti koje podržava OpenAPI v3.0 podržava i CRD uz neke razlike i ograničenja #link("https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation")[(doc)]. 
+- Samim tim mnoge funkcionalnosti koje podržava OpenAPI v3.0 podržava i CRD uz neke razlike i ograničenja #link("https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation")[(doc)].
 
 == Custom Resource Definition (CRD)
 
 - Svaki CRD mora da ima sledeće:
-    - ApiVersion: Grupa i verzija kojoj resurs pripada.
-    - Kind: Naziv resursa napisan u PascalCase formatu (npr. `Dojo`). 
-    - Scope: Određuje da li je resurs vezan za namespace ili je na nivou celog klastera. Vrednosti su: `Namespaced` ili `Cluster`.
-    - Spec: Željeno stanje resursa (ono što korisnik definiše u YAML-u).
-    - Status: Trenutno stanje resursa (ono što Operator upisuje nakon posmatranja klastera).
-    - Singular: Jednina naziva resursa, koristi se u kubectl komandama (npr. `dojo`).
-    - Plural: Množina naziva resursa, koristi se u URL putanjama API-ja i `kubectl` listama (npr. dojos).
+    - `ApiVersion`: Grupa i verzija kojoj resurs pripada.
+    - `Kind`: Naziv resursa napisan u PascalCase formatu (npr. `Dojo`).
+    - `Scope`: Određuje da li je resurs vezan za namespace ili je na nivou celog klastera. Vrednosti su: `Namespaced` ili `Cluster`.
+    - `Spec`: Željeno stanje resursa (ono što korisnik definiše u YAML-u).
+    - `Status`: Trenutno stanje resursa (ono što Operator upisuje nakon posmatranja klastera).
+    - `Singular`: Jednina naziva resursa, koristi se u `kubectl` komandama (npr. `dojo`).
+    - `Plural`: Množina naziva resursa, koristi se u URL putanjama API-ja i `kubectl` listama (npr. dojos).
 
 == Kreiranje custom resursa (proširavanje API-a)
 
@@ -191,17 +192,18 @@ kubebuilder create api --group core --version v1 --kind Dojo --resource --contro
 - `--kind`: Naziv resursa. Pun naziv resursa je `dojo.core.jutsu.com`.
 - `--resource`: Generiše kod za CRD.
 - `--controller`: Generiše kod za kontroler.
+- `--pluar`: Množina naziva resursa.
 
 == Kreiranje custom resursa (proširavanje API-a)
 
 - Prethodna komanda izgeneriše sledeće fajlove:
 
 ```
-INFO api/v1/dojo_types.go 
-INFO api/v1/groupversion_info.go 
-INFO internal/controller/suite_test.go 
-INFO internal/controller/dojo_controller.go 
-INFO internal/controller/dojo_controller_test.go 
+INFO api/v1/dojo_types.go
+INFO api/v1/groupversion_info.go
+INFO internal/controller/suite_test.go
+INFO internal/controller/dojo_controller.go
+INFO internal/controller/dojo_controller_test.go
 ```
 - Od posebnog interesa su nam sledeći fajlovi:
     - `api/v1/dojo_types.go` - koristi se za konfiguraciju CRD.
@@ -210,9 +212,9 @@ INFO internal/controller/dojo_controller_test.go
 
 == Implementacija CRD-a
 
-- Što se tiče obaveznih elemenata CRD-a, Kubebuilder je već dosta stvari uradio sa nas: `ApiVersion`, `Kind`, `Scope`, `Singular`, `Plural`.
+- Što se tiče obaveznih elemenata CRD-a, Kubebuilder je već dosta stvari uradio za nas: `ApiVersion`, `Kind`, `Scope`, `Singular`, `Plural`.
 
-- Od nas se očekuje da definišemo `Spec` i `Status` podresurse, s obzirom na to da su specifični za svaki resurs pojedinačno.
+- Od nas se očekuje da definišemo `Spec` i `Status` resursa, s obzirom na to da su specifični za svaki resurs.
 
 - Oni se definišu pomoću `DojoSpec` i `DojoStatus` struktura koje se definisane u `api/v1/dojo_types.go` fajlu.
 
@@ -234,7 +236,7 @@ type DojoSpec struct {
 
 == Implementacija CRD-a
 
-- `Spec` podresurom se definiše željeno stanje resursa. Recimo da treba da izgleda ovako:
+- Za definisanje željenog stanja resursa koristi se `Spec` resursa. Treba da izgleda ovako:
 
 ```yaml
 apiVersion: core.jutsu.com/v1
@@ -247,9 +249,9 @@ spec:
   replicas: 3 # Broj replikaca Dojo aplikacije.
   database: Postgres # Gde se čuvaju podaci: Postgres ili Mongo.
   credentialsRef: # Naziv Secret objekta koji sadrži kredencijale baze.
-   name: dojo 
+   name: dojo
    namespace: default
-``` 
+```
 
 == Implementacija CRD-a (DojoSpec)
 
@@ -285,9 +287,9 @@ type DojoSpec struct {
 
 - Ukoliko je atribut obavezan onda treba koristiti vrednosti a ne pokazivače: `int`, `stirng`.
 
-- Ukoliko je atribut opcioni onda koristiti pokazivače `*int` `*string`. 
+- Ukoliko je atribut opcioni onda koristiti pokazivače `*int` `*string`.
 
-- Ovim načinom izbegavate nejasnoće u vašem kodu. Na primer, ukoliko je neko atribut opicioni i tipa je `string`, ukoliko se ne prosledi vrednost, biće `""`. Ne znamo da li je vrednost nedostajuća ili je sa razlogom postavljena ta vrednost. Takođe, može da izazove neželjenje efekte kod API Servera kada se radi Server Side Apply.  
+- Ovim načinom izbegavate nejasnoće u vašem kodu. Na primer, ako je neki atribut opicioni i tipa je `string`, ukoliko se ne prosledi vrednost, biće `""`. Ne znamo da li je vrednost nedostajuća ili je sa razlogom postavljena ta vrednost. Takođe, može da izazove neželjenje efekte kod API Servera kada se radi Server Side Apply.
 
 == Implementacija CRD-a (Enumeracije)
 
@@ -335,7 +337,7 @@ type DojoStatus struct {
 
 - Možete staviti sve što vam je neophodno da lakške pratite stanje objekta.
 
-- Preporuke kako pisati `Status` resursa je dostupno #link("https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties")[ovde]
+- Preporuke kako pisati `Status` resursa je dostupno #link("https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties")[ovde].
 
 - Jedna od generalni preporuka jeste da se koristi `Conditions` sa barem 3 elemenata:
     - Available: resurs je spreman za korićenje.
@@ -374,11 +376,11 @@ type DojoStatus struct {
 
 == Implementacija CRD-a (DojoStatus)
 
-- Svi atributi moraju da su opcioni jer moraju biti prazni prilikom kreiranje objekata. Kontoler kasnije upravlja statusom objekta.
+- Svi atributi moraju da su opcioni jer moraju biti prazni prilikom prvog definisanja objekata. Kontoler kasnije upravlja statusom objekta.
 
 - *Napomena*: Status resursa je deo API-a i mora se voditi računa o *backward* i *forward* komptatibilnošću.
 
-- Drugi controleri (ili alati) mogu da koriste status objekat da bi pratili njegovo stanje i znali da odreguju na određenim situacijama.
+- Drugi controleri (ili alati) mogu da koriste status objekat da bi pratili njegovo stanje i znali da odreguju u određenim situacijama.
 
 - Ukoliko se napravi *brekable* izmena, ostali kontroleri i alati neće raditi dobro.
 
@@ -399,9 +401,9 @@ make manifest generate
 
 == Implementacija kontolera
 
-- Implementacija kontrolera se nalaze u `internal/controller/dojo_controller.go`.
+- Implementacija kontrolera se nalazi u `internal/controller/dojo_controller.go`.
 
-- Kao što je već napomenuto, kontoler je petlja koja čega na izmene koje su se primenile na `Dojo` objekte i procesira u skaldu sa nekom logikom.
+- Kao što je već napomenuto, kontoler je petlja koja čega na izmene koje su se primenile na `Dojo` objekte i procesira ih u skaldu sa nekom logikom.
 
 - Ta petlja se naziva *reconcile* petlja a struktura koja implementira petju se naziva *Reconciler*.
 
@@ -429,7 +431,7 @@ func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 ```
 
-== Implementacija kontolera (v1)
+== Implementacija kontolera
 
 ```go
 func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -447,27 +449,27 @@ func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 ```
 
-== Implementacija kontolera (v1)
+== Implementacija kontolera
 
 - `Reconcile` metoda ima jedan parameter (zanemajurući `context`) `ctrl.Request`. `ctrl.Request` sadrži `name` i `namespace` `Dojo` objekta nad kojim se desila izmena i treba da se procesira od strane Reconcilera.
 
 - Pomoću `name` i `namepsace` (i `Kind`) možemo jedinstveno da identifikujemo bilo koji objekat unutar clustera. Zbog toga se često u samoj biblioteci #link("https://pkg.go.dev/k8s.io/apimachinery/pkg/types#NamespacedName")[NamespacedName] provlači u drugim strukturama.
 
-- Na onsovu `name` i `namespace` moramo da dobavimo kompletan objekat iz klastera. Kad je objekat dobaljen, treba ga procesirati na osnovu `Spec` i `Status` vrednosti objekta.
+- Na onsovu `name` i `namespace` moramo da dobavimo kompletan objekat iz klastera. Kad je objekat dobavljen, treba ga procesirati na osnovu `Spec` i `Status` vrednosti objekta.
 
 == Implementacija kontolera (v1)
 
-- Dobavljanje se radi pomoću `r.Get(ctx, req.NamespacedName, &corev1.Dojo)`. 
+- Dobavljanje se radi pomoću `r.Get(ctx, req.NamespacedName, &corev1.Dojo)`.
 
-- Ukoliko nije pronađen to znači da se desilo brisanje objekta iz klustera i nema potrebe sa daljem procesirajem. Time završavamo _reconcile_ petlju.
+- Ukoliko nije pronađen to znači da se desilo brisanje objekta i nema potrebe sa dodatnim procesirajem. Time završavamo _reconcile_ petlju.
 
-- Za uspešno završavanje _reconcile_ petlje neophodno je vratiti `ctrl.Result{}, nil`. 
+- Za uspešno završavanje _reconcile_ petlje neophodno je vratiti `ctrl.Result{}, nil`.
 
 - Za neuspešno izvršavanje, bitno je vratiti `error` koji nije `nil`.
 
-- Zbog toga slučaj brisanja objekata koristimo pomoćnu metodu `client.IgnoreNotFound(err)`. 
+- Zbog toga, u slučaju brisanja objekata koristimo pomoćnu metodu `client.IgnoreNotFound(err)`.
 
-- Reconciler u pozadini koristi `client.Client` pa se njegove metode mogu koristi u _reconcile_ petlji. 
+- Takođe, Reconciler u pozadini koristi `client.Client` pa se njegove metode mogu koristi u _reconcile_ petlji.
 
 == Instalacija CRD i pokretanje operatora
 
@@ -507,7 +509,7 @@ INFO    Starting workers        {"controller": "dojo", "controllerGroup": "core.
 
 == Instalacija CRD i pokretanje operatora
 
-- Instalacijom CRD-a proširili smo API Server. 
+- Instalacijom CRD-a proširili smo API Server.
 
 - Na API Serveru je kreiran novi RESTful API endpoint:
 
@@ -556,10 +558,12 @@ CredentialsRef: {dojo default}
 == Instalacija CRD i pokretanje operatora
 
 - Primere za testiranje operatora možemo definisati u `config/samples/core_v1_dojo.yaml`.
-- Primeniti ih na cluster pomoću `kubectl apply -f config/samples/core_v1_dojo.yaml`.
-- Ili koristiti kustomize `kubectl apply -k config/samples`.
+- Primeniti ih na cluster pomoću: `kubectl apply -f config/samples/core_v1_dojo.yaml`.
+- Ili koristiti kustomize: `kubectl apply -k config/samples`.
 
-== Implementacija operatora (v2)
+= Dojo operator v2
+
+== Implementacija operatora
 
 - Ustanovili smo da se _reconcile_ petlja okida na promene `Dojo` objekata.
 
@@ -567,44 +571,44 @@ CredentialsRef: {dojo default}
 
 - Važno je napomenuti da je Reconciler *stateless*. Ne pamti stanja iz prethodnog izvršavanja.
 
-- S obzirom na to da se događaji mogu duplicirati, važno je da se Reconciler implementira da bude *idempotentan*.
+- S obzirom na to da se događaji mogu duplicirati, važno je da Reconciler bude *idempotentan*.
 
 / Idempotency: Idempotency is the property where an operation can be applied multiple times without changing the result beyond the initial application.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
 - U slučaju da se ne ispoštuje idempotentnost, može doći do beskonačne petlje.
 
-- Način kojim se Reconciler pravi idempotetnim jeste korišćenjem statusa objekta. 
+- Način kojim se Reconciler pravi idempotetnim jeste korišćenjem `Status` objekta.
 
-- Na osnovu statusa objekta Reconciler zna u kojoj fazi procesiranja objekta se nalazi i kako dalje da nastavi sa procesiranjem objekta.
+- Na osnovu `Status` objekta Reconciler zna u kojoj fazi procesiranja objekta se nalazi i kako dalje da nastavi sa procesiranjem objekta.
 
 - Zbog toga je bitno dobro modelovati `Status` resursa.
 
 - Bitno je napomenuti da se ceo Kubernetes bazira na *level-based* dizajnu umesto *edge-based*.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
 / Level-based design: The system must operate correctly given the desired state and the current/observed state, regardless of how many intermediate state updates may have been missed. Edge-triggered behavior must be just an optimization #link("https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/principles.md#control-logic")[(doc)].
 
 - Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta (npr. korisnik je pomoću `kubectl` 5 puta izmenilo objekat). Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja.
 
 - Postoje 3 povratne vrednosti kojima se vraca rezultat u `Reconcile` metodi:
-    - 
+    -
 
-- Pogledati Reconciler implementaciju. TODO
+- Pogledati Reconciler #link("https://github.com/DanijelRadakovic/dojo-operator/blob/v2/internal/controller/dojo_controller.go#L74")[implementaciju].
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
-- Prilikom implentacije neophodno je identifikovati greške od kojih se Reconciler ne može oporativit. 
+- Prilikom implentacije neophodno je identifikovati greške od kojih se Reconciler ne može oporativit.
 
-- U skladu sa tim greškama treba `Status` objekta izmenuti na odgovarajući način. Odnosno podesiti `Reason` i `Status`(`true/false`) vrednosti za određene `Conditions`.
+- U skladu sa tim greškama `Status` objekta treba izmeniti na odgovarajući način. Odnosno podesiti `Reason` i `Status`(`true/false`) vrednosti u odgovarajućim `Conditions`.
 
-- Na primer, od `409 Conflict` greške se može oporaviti jer naglašava da ne radimo sa najnovijom verzijom objekta, i treba opet okinuti petlju koja će raditi sa najnovijom verzijom. 
+- Na primer, od `409 Conflict` greške se može oporaviti jer naglašava da ne radimo sa najnovijom verzijom objekta, i treba opet okinuti petlju koja će raditi sa najnovijom verzijom.
 
-- Međutim, od greške koja nastaje da se Deployment ne može kreirati jer je nešto pogrešno konfigurisano je greška on koje se Reconciler ne može opraviti. 
+- Međutim, od greške koja nastaje da se Deployment ne može kreirati jer je nešto pogrešno konfigurisano (selector, ownership) je greška on koje se Reconciler ne može opraviti.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
 - U našoj implementaciji postoje 3 `Conditions`: `Available`, `Progressing`, `Degraded`.
 
@@ -614,77 +618,295 @@ CredentialsRef: {dojo default}
 
 - `Progressing` je `true` ukoliko Reconciler procesira objekat u željeno stranje.
 
-- `Degraded` i `Progressing` su međusovno isključivi, odnoston ukoliko je `Degraded=True`, onda mora `Progressing=False` i obrnuto. 
+- `Degraded` i `Progressing` su međusovno isključivi, odnosno ukoliko je `Degraded=True`, onda mora da je `Progressing=False` i obrnuto.
 
 - Zbog toga postoje metode `setUnrecoverableErrorStatus` koja postaljva `Degraded=True,Progressing=False`, i njena inverzna metoda `setProgressStatus`.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
 - `Available` nije međusobno isključiv sa `Degraded` i `Progressing`:
     - `Available=True,Progressing=True`: Postoje 3 replike, a Reconciler radi na tome da ih skalira na 5 jer je tako definisano u `Spec` objekta.
-    - `Available=True,Degraded=True`: Postoje 3 replike, a žejeno stanje je 5 replika. U međuvremenu se desila greška od kojeg nema oporavka.
+    - `Available=True,Degraded=True`: Postoje 3 replike, a žejeno stanje je 5 replika. U međuvremenu se desila greška od koje nema oporavka.
 
 - Reconciler ne sme da menja `Spec` objekta. Sme da menja samo `Status` (kasnije ćemo videti `Scale` i `Finalizer`).
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
-- U petlji ne bi trebali da u imate logiku koja čega resurs da se kreira (npr. EC2 istanca, Discord kanal). 
+- U petlji ne treba da se nalazi logika koja čega resurs da se kreira (npr. EC2 istanca, Discord kanal).
 
 - Svaka petlja ima `timeout` koji kada istekne prekine isršavanje te iteracije.
 
 - Takođe ostali zahtevi se ne mogu procesirati dok se iteracija te petlje na završi (ukoliko niste podeseili `concurency`).
 
-- Pametnije bi bilo da završite sa iteracijom petlje i okinete petlju ponovo nakog određenog vremana sa `ctrl.Request{After: 30 * Seconds}`
+- Pametnije bi bilo da završite sa iteracijom petlje i okinete petlju ponovo nakog određenog vremana sa `ctrl.Request{After: 30 * Seconds}`.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
-- *Zlatno pravilo*: U jednoj iteraciji petlje može se raditi samo jedna izmena objekta. 
+- *Zlatno pravilo*: U jednoj iteraciji petlje može se raditi samo jedna izmena objekta.
 
-- API Server ima evidenciju trenutne verzije svakog objekta. Verzija objekta se nalazi `metadata.resourceVersion`. 
- 
-- Svaka izmena objekta (bilo `Spec` ili `Status`) povećava veriju objekta. 
- 
+- API Server ima evidenciju trenutne verzije svakog objekta. Verzija objekta se nalazi u `metadata.resourceVersion`.
+
+- Svaka izmena objekta (bilo `Spec` ili `Status`) povećava verziju objekta.
+
 - Ukoliko se na API Server pošalje objekat (pomoću `r.Update()`) koji nema najnoviju verziju, API Server vraća `409 Confilct` grešku.
 
 - Zbog toga je dobra praksa da se posle svakog `r.Update()`, uradi provera `!apierros.IsConflic(err)` kako bi ignorisali tu grešku i opet okinuli petlju.
 
-- Sasvim je normalno da se _reconcile_ petlja više puta okine kako bi se došlo do željeneog stanja. 
+- Sasvim je normalno da se _reconcile_ petlja više puta okine kako bi se došlo do željeneog stanja.
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
-dijabram kako funkcione API server, etcd, client, informer, workque itd
+#figure(image("design.png"), caption: [Komunikacija između komponenti])
 
-== Implementacija operatora (v2)
+== Implementacija operatora
 
-- Ownership nad deploymentom.
+- API Server je komponenta kojoj se šalju REST zahtevi za izmene objekata.
 
-- Objekat moze da ima samo jednog ownership parenta.
+- API Server je jedina komponenta koja sme da upisuje u _etcd_ bazu.
 
-- Optimizujeme watch promena, samim tim optimizujemo memoriji jer se smanjuje velicina cache
-- omogucava nam brisanje,
+- Pre upisivanja objekta u bazu pozivaju se _Webhook_-ovi.
 
+- Kada se desi neka promena na API Serveru, API Server radi broadcast tako da sve ostale komponente koje su zaintersovane za taj događaj mogu da odreaguju.
+
+== Implementacija operatora
+
+- Operator koristi `ctrl.Client` koji u pozadini pokreće _Informer_ komponentu.
+
+- Informer obuvata sledeće komponente:
+    - `Reflector`: Zadužen je da gleda izmene objekata koje su se desile na API Serveru a od interesa su za operator.
+    - `Cache`: Čuva kompletne objekte (`Metadata`, `Spec`, `Status`) koji su dobavljeni od strane Reflector-a.
+    - `Workqueue`: Metapodaci objekata (`namespace/name`) dobavjeni od strane Reflector-a informer stavlja u Workqueue. Workqueue okida reconciler petlju.
+
+- *Napomena*: Ovo je pojednostavljen dizajn Informera i prava implementacija je dosta složenija.
+
+== Implementacija operatora
+
+- Za _Workqueue_ `namespace/name` predstavljaju ključeve i _Workqueue_ je zadužen da *uklanja duplikate ključeva*.
+
+- Ukoliko se jedan objakat promenio 5 puta imaće isti ključ u _Workqueue_ i samim tim će uraditi uklanjanje duplikata i biti samo jedan element. Ovaj princip poštuje *level-based* dizajn po kojem nas interesuje samo poslednja izmena, prethodne 4 se ignorišu.
+
+- `r.Get()` dobavlja objekte iz keša. Sve komponente Kubernetesa imaju keš kako ne bi opteretili API Server sa zahtevima.
+
+- `r.Update()` direktno komunicira sa API Server. Ovaj zahtev API Server obrađuje i radi broadcast koji bi u nekom trenutno trebao da se propagira do operatora i opet okine _reconcile_ petlju.
+
+== Implementacija operatora
+
+- S obzrim na to da API Server radi broadcast može se deisti da keš nema poslednju verziju objekta prilikom izvršavanja _reconcile_ petlje i da dođe do `409 Conflict` greške ukoliko se u toj iteraciji petlje radi `r.Update()`.
+
+- Postoji način da se objekat direktno dobavi sa API Servera: `r.APIReader`. Međutim, ovo način komunikacije ne treba uzlopotrebljavati kako ne bi udarili u _rate limit_ API Servera.
+
+- Rate limit se može konfigurisati prilikom kreiranja klastera pomoću `k3d`: `--max-requests-inflight, Default: 400` #link("https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/")[(doc)]
+
+== Implementacija operatora
+
+```go
+func (r *DojoReconciler) deploymentForDojo(dojo *corev1.Dojo) (*appsv1.Deployment, error) {
+	image := "danijelradakovic/dojo:0.1.0-alpine"
+	dojoLabels := r.labels(dojo.Name)
+	dep := &appsv1.Deployment{...}
+
+	// Set the ownerRef for the Deployment
+	if err := ctrl.SetControllerReference(dojo, dep, r.Scheme); err != nil {
+		return nil, err
+	}
+	return dep, nil
+}
+```
+
+== Implementacija operatora
+
+- Podesili smo da je Dojo ima _ownership_ nad Deployment objektom.
+
+- Ovo nam omogućava da prilikom brisanja Dojo objekta, Kubernetes _Carbage Collector_ će obrisati Deployment za nas.
+
+- Postavljanje ownership-a nad objektom podrazumeva dodeljivanje `metadata.ownerReferences` objektu.
+
+== Implementacija operatora
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  ...
+  name: tokyo-jujutsu-high
+  namespace: default
+  ownerReferences:
+  - apiVersion: core.jutsu.com/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Dojo
+    name: tokyo-jujutsu-high
+    uid: b9fd0c5d-c0bd-4206-8bca-8e18e85423ad
+```
+
+== Implementacija operatora
+
+- S obzirom na to da smo postavili _ownership_ Deployment objektu, moramo da podesimo kontroler da posmatra izmena za taj deployment.
+
+- Ne posmatramo sve Deployment objekte nego samo one koji imaju _ownership_ od strane Dojo objekta (optimizujemo keš i memoriju operatora).
+
+```go
+// SetupWithManager sets up the controller with the Manager.
+func (r *DojoReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Dojo{}).
+		Owns(&appsv1.Deployment{}).
+		Named("dojo").
+		Complete(r)
+}
+```
+
+== Implementacija operatora
+
+- Na ovaj način ako neko izmeni ili obriše Deployment objekat, okinuće se _reconcile_ petlja i konfigurisati Deployment u skladi sa `Spec` Dojo objekta.
+
+```bash
+$ kubectl get pods,deployment,dojo
+NAME                                      READY   STATUS    RESTARTS   AGE
+pod/tokyo-jujutsu-high-79669f6d67-5zn56   1/1     Running   0          60m
+pod/tokyo-jujutsu-high-79669f6d67-7kxsd   1/1     Running   0          60m
+pod/tokyo-jujutsu-high-79669f6d67-g2htr   1/1     Running   0          60m
+
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/tokyo-jujutsu-high   3/3     3            3           60m
+
+NAME                                     AGE
+dojo.core.jutsu.com/tokyo-jujutsu-high   60m
+``` 
+
+== Implementacija operatora
+
+```bash
+$ kubectl scale deployment tokyo-jujutsu-high --replicas 1
+$ kubectl get pods,deployment,dojo
+NAME                                      READY  STATUS       RESTARTS AGE
+pod/tokyo-jujutsu-high-79669f6d67-4hwz5   1/1    Running      0        16s
+pod/tokyo-jujutsu-high-79669f6d67-5zn56   1/1    Terminating  0        63m
+pod/tokyo-jujutsu-high-79669f6d67-7kxsd   1/1    Running      0        63m
+pod/tokyo-jujutsu-high-79669f6d67-g2htr   1/1    Terminating  0        63m
+pod/tokyo-jujutsu-high-79669f6d67-g64p8   1/1    Running      0        16s
+
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/tokyo-jujutsu-high   3/3     3            3           63m
+
+NAME                                     AGE
+dojo.core.jutsu.com/tokyo-jujutsu-high   63m
+```
+
+= Dojo operator v3
+
+== Implementacija operatora
+
+- Deployment resurs može da se scalira koristeći `kubctl scale` komandu. Želimo da omogućimo isto podršu za naš Dojo resurs
+
+- Takođe, _HorizontalPodAutoscaler_ (HPA) skalira na identičan način pa omogućujemo i njegovu integraciju.
+
+- Skaliranje se zapravo dešava na `/scale` podresursu.
+
+== Implementacija operatora
+
+- Neophodno je dodati `Selector` polje u statusu zbog HPA. 
+
+```go
+// DojoStatus defines the observed state of Dojo.
+type DojoStatus struct {
+	...
+	// Selector is required for HPA to work with CRDs.
+	// It must be the string representation of the label selector.
+	// +optional
+	Selector string `json:"selector,omitempty"`
+}
+``` 
+
+== Implementacija operatora
+
+- Konfigurisati _markup_ sa `/scale` podresurs tako da bira obuhvata `readyReplicas` i `selector` iz `Status` resursa.
+
+```go
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=dojos
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,
+//statuspath=.status.readyReplicas,selectorpath=.status.selector
+// Dojo is the Schema for the dojos API
+type Dojo struct {
+	metav1.TypeMeta `json:",inline"`
+	...
+}
+```
+
+== Implementacija operatora
+
+- Želimo da nam ispisuje dodatna polja Dojo objekta kada koristimo `kubect get dojo`.
+
+```go
+// +kubebuilder:resource:shortName=dj,categories={all}
+// +:printcolumn:name="READY",type="string",JSONPath=".status.readyStatus"
+// +:printcolumn:name="UP-TO-DATE",type="integer",JSONPath=".status.upd"
+// +:printcolumn:name="AVAILABLE",type="integer",JSONPath=".status."
+// +:printcolumn:name="ACCOUNT",type="string",JSONPath=".spec.accountId"
+// +:printcolumn:name="STORAGE",type="string",JSONPath=".spec.storage"
+// +:printcolumn:name="AGE",type="date",JSONPath=".metadata.creati"
+type Dojo struct {...}
+```
+
+== Implementacija operatora
+
+- Da bi nam grupe radile moramo da obrišemo i instaliramo CRD ponovo.
+
+```bash
+make uninstall
+make manifest generate install run
+kubect apply -k config/sample
+```
+
+== Implementacija operatora
+
+```bash
+$ kubect  get all
+
+NAME                                      READY   STATUS  RESTARTS AGE
+pod/tokyo-jujutsu-high-79669f6d67-jvf5r   1/1     Running 0        104s
+pod/tokyo-jujutsu-high-79669f6d67-nhjm6   1/1     Running 0        104s
+pod/tokyo-jujutsu-high-79669f6d67-sfjds   1/1     Running 0        104s
+...
+
+NAME                                     READY   UP-TO-DATE   AVAILABLE   ACCOUNT          AGE
+dojo.core.jutsu.com/tokyo-jujutsu-high   3/3     3            3           The Higher-Ups   104s
+```
+
+
+== Implementacija operatora
+
+```bash
+$ kubectl scale dojo tokyo-jujutsu-high --replicas 2
+$ kubectl get all
+NAME                                      READY STATUS      RESTARTS AGE
+pod/tokyo-jujutsu-high-79669f6d67-jvf5r   1/1   Terminating 0        6m33s
+pod/tokyo-jujutsu-high-79669f6d67-nhjm6   1/1   Running     0        6m33s
+pod/tokyo-jujutsu-high-79669f6d67-sfjds   1/1   Running     0        6m33s
+...
+
+NAME                                     READY   UP-TO-DATE   AVAILABLE   ACCOUNT          AGE
+dojo.core.jutsu.com/tokyo-jujutsu-high   2/2     2            2           The Higher-Ups   6m33s
+```
+
+
+
+== Implementacija operatora
 
 == Upravljanje `reconcile` petljom
 
 Exponential Backoff Requeue
 
-
-Ima queue promena koje su se desile, i cim posotji queue treba da se napravi da bude idempotent.
-
-U queue se cuva namespace/name  i radi deduplication kako bi smanjio frekveciju promena. Na primer u jednom loop-u, promenio se shop1/shop resource 10 puta, umesto da u queue bude 10 elemenata postojace samo jedan jer ce se duplikati ukloniti.
-Nacin kako da se napravi da reconciler bude idempotent jeste da bude da se koristi status.
-
 Subresursi za /status i /scale
 
-Da bi smo na pravilan način implenetirali `reconcile` petlju, moramo prvo bolje da znamo kako API Server i ostali mehanizmi funkcionišu u pozadini.
 
-== Pisanje testova
-
-Pisanje testova
+= Dojo operator v4
 
 == Kreiranje Postgres baze
 
-- Aplikacija zahteva konekciju ka bazi. Očekuje da se krenedicijali nalaze u `env var` koji će se popuniti iz `Secret` objekta.
+- Dojo aplikacija zahteva konekciju ka bazi i da se krenedicijali nalaze u `env var` koji će se popuniti iz `Secret` objekta.
 
 - *Problem*: kako znati koji `Secret` korisiti i šta treba da bude njegov sadržaj?
 
@@ -696,8 +918,138 @@ Pisanje testova
 
 == Kreiranje Postgres baze
 
-- Resurse koje `CloudNativePG` operator nudi se nalaze #link("https://cloudnative-pg.io/docs/1.28/cloudnative-pg.v1")[ovde].
+- Resurse koje CloudNativePG operator nudi se nalaze #link("https://cloudnative-pg.io/docs/1.28/cloudnative-pg.v1")[ovde].
 
-- Od posebnog značaja je `Database` resurs koji omogućava kreiranje baze unutar klustera i `Secret` objekta sa odgovarajućim kredencijalima.
+- Od posebnog značaja su #link("https://cloudnative-pg.io/docs/1.28/bootstrap")[Bootstrap] i #link("https://cloudnative-pg.io/docs/1.28/declarative_database_management")[Database] resurs koji omogućava kreiranje baze unutar klustera i `Secret` objekta sa odgovarajućim kredencijalima.
 
-- Sve što naj je ostalo jeste da proširimo `Spec` sekciju u kojoj je moguće definisati tip baze koji se koristi i naziv `Secret` objekta.
+- Instalacija CloudNativePG operatora:
+
+```bash
+helm repo add cnpg https://cloudnative-pg.github.io/charts
+helm upgrade --install cnpg \
+  --namespace cnpg-system \
+  --create-namespace \
+  cnpg/cloudnative-pg
+```
+
+== Kreiranje Postgres baze
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: dojo
+spec:
+  instances: 1
+  bootstrap:
+    initdb:
+      database: dojo
+      owner: dojo
+      postInitApplicationSQL:
+        - CREATE TABLE weapons(id text not null, name text not null, PRIMARY KEY(id))
+        - ALTER TABLE weapons OWNER TO dojo;
+  storage:
+    size: 1Gi
+EOF
+```
+
+== Kreiranje Postgres baze
+
+```bash
+$ kubectl get cluster,secrets
+NAME                              AGE   INSTANCES   READY   STATUS                     PRIMARY
+cluster.postgresql.cnpg.io/dojo   48s   1           1       Cluster in healthy state   dojo-1
+
+NAME                      TYPE                       DATA   AGE
+secret/dojo-app           kubernetes.io/basic-auth   11     48s
+secret/dojo-ca            Opaque                     2      48s
+secret/dojo-replication   kubernetes.io/tls          2      48s
+secret/dojo-server        kubernetes.io/tls          2      48s
+```
+
+== Kreiranje Postgres baze
+
+```bash
+$ kubectl exec -it dojo-1 -- bash
+postgres@dojo-1:/$ psql
+psql (18.1 (Debian 18.1-1.pgdg13+2))
+Type "help" for help.
+
+postgres=# \l
+
+   Name    |  Owner   | Encoding | Locale Provider | Collate | Ctype |
+-----------+----------+----------+-----------------+---------+-------+
+ dojo      | dojo     | UTF8     | libc            | C       | C     | 
+ postgres  | postgres | UTF8     | libc            | C       | C     | 
+ template0 | postgres | UTF8     | libc            | C       | C     |
+           |          |          |                 |         |       |
+ template1 | postgres | UTF8     | libc            | C       | C     |
+```
+
+== Kreiranje Postgres baze
+
+```bash
+$ kubectl get -o yaml secrets dojo-app
+apiVersion: v1
+data:
+  dbname: ZG9qbw==
+  fqdn-jdbc-uri: amRiYzpwb3N0Z3Jlc3FsOi8vZG9qby1ydy5kZWZhdWx0LnN2Yy5...
+  fqdn-uri: cG9zdGdyZXNxbDovL2Rvam86WmJBdWJydTM0ZmRqeGJVQTlTSThSaXlZ...
+  host: ZG9qby1ydw==
+  jdbc-uri: amRiYzpwb3N0Z3Jlc3FsOi8vZG9qby1ydy5kZWZhdWx0OjU0MzIvZG9q...
+  password: WmJBdWJydTM0ZmRqeGJVQTlTSThSaXlZS1d1MGRiSjRoS0FJeVhRdmN3...
+  pgpass: ZG9qby1ydzo1NDMyOmRvam86ZG9qbzpaYkF1YnJ1MzRmZGp4YlVBOVNJOF...
+  port: NTQzMg==
+  uri: cG9zdGdyZXNxbDovL2Rvam86WmJBdWJydTM0ZmRqeGJVQTlTSThSaXlZS1d1M...
+  user: ZG9qbw==
+  username: ZG9qbw==
+```
+
+== Implementacija operatora
+
+- Pogledati Reconlicer #link("https://github.com/DanijelRadakovic/dojo-operator/blob/v4/internal/controller/dojo_controller.go#L79")[implementaciju].
+
+```bash
+kubectl apply -k config/sample
+# change the pod name accordingly
+kubectl exec -it tokyo-jujutsu-high-7fd46f69bf-8c797 -- ash
+
+$ wget -qO- --post-data="" "http://localhost:8080/weapon?id=0&weapon=katana"
+$ wget -qO- --post-data="" "http://localhost:8080/weapon?id=1&weapon=ninjaStar"
+$ wget -qO- --post-data="" "http://localhost:8080/weapon?id=2&weapon=ninjaSword"
+$ wget -qO-  "http://localhost:8080/weapon"
+```
+
+== Implementacija operatora
+
+```go
+// SetupWithManager sets up the controller with the Manager.
+func (r *DojoReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Dojo{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&k8scorev1.Secret{}).
+		Watches(
+			&k8scorev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(r.findDojosForSecret),
+			builder.WithPredicates(predicate.LabelChangedPredicate{}),
+		).
+		Named("dojo").
+		Complete(r)
+}
+```
+
+== Implementacija operatora
+
+- `Watch()` sekcija naznačava da kontroler gleda sve Secret objekte unutar klaster i čuva ih u keš Informera. Pre upisivanja u _Workqueue_ secreti se filtiraraju na osnovu `findDojosForSecret`. Metoda će vratiti kolekciju `namespace/name` Dojo objekata koji će se biti prosleđeni u _Workqueue_.
+
+- Na ovaj način smo omogućili da svi Dojo objekti koji su zainteresovani za kredencijale biti procesirani kada nastanu promene vezane za kredencijale.
+
+
+== Pisanje testova
+
+Pisanje testova
+
+== Dodatna pojašnjenja
+
