@@ -853,7 +853,7 @@ NAME                                     AGE
 dojo.core.jutsu.com/tokyo-jujutsu-high   63m
 ```
 
-= Dojo operator v3
+= Dojo operator v0.3.0
 
 == Implementacija operatora
 
@@ -973,7 +973,7 @@ dojo.core.jutsu.com/tokyo-jujutsu-high   2/2     2            2           The Hi
     - itd.
 
 
-= Dojo operator v4
+= Dojo operator v0.4.0
 
 == Kreiranje Postgres baze
 
@@ -1311,6 +1311,8 @@ helm upgrade --install dojo-operator ./dist/chart \
   --namespace dojo-operator-system \
   --create-namespace
 ```
+
+= Dojo operator v0.5.0
 
 == Discord intergracija
 
