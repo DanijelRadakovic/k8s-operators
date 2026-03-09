@@ -943,9 +943,24 @@ dojo.core.jutsu.com/tokyo-jujutsu-high   2/2     2            2           The Hi
 
 == Implementacija operatora
 
-== Upravljanje `reconcile` petljom
+- Podresursi (subresources) su način na koji API server deli jedan isti Kubernetes objekat na različite virtualne _endpoint_-e. Oni omogućavaju API Serveru da primeni specifičnu logiku, validaciju i kontrolu pristupa za tačno određene delove objekta, a da pritom ne izlaže ceo resurs.
 
-Subresursi za /status i /scale
+- Na primer Dojo kontroler ima pravo da šalje PUT zahtev na `/apis/core.jutsu.com/v1/namespaces/*/dojos/status`. Podresurs `status` menja samo `Status` objekta, dok se izmene vezane sa `Spec` ignorišu.
+
+- Takođe kontroler nema prava da šalje zahteve na `/apis/core.jutsu.com/v1/namespaces/*/dojos` jer se on koristi za menjanje labela, `Spec` i `metadata` objekta.
+
+== Implementacija operatora
+
+- Pored `/status` postoje i drugi podresursi:
+    - `/scale`: Obezbeđuje standardizovan interfejs za Horizontal Pod Autoscaler.
+    - `/finalizer`: Upravlja procesom brisanja.
+
+- Postoje podresursi koji izvršavaju privremene akcije ili radi streaming podataka: `/log`, `/exec`, `/portforward`, `/approval`.
+
+- Kubebuilder ima markaup-e koji nude integraciju sa podresursima:
+    - `+kubebuilder:subresource:status`,
+    - `+kubebuilder:subresource:scale`,
+    - itd.
 
 
 = Dojo operator v4
