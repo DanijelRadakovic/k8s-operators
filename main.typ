@@ -110,7 +110,7 @@
     - `DiscordGroup`: upravlja Discord grupom.
     - `DiscordChannel`: upravlja Discord text kanalom.
 
-- Implementacija operatora je dostupna #link("https://github.com/DanijelRadakovic/dojo-operator")[ovde]. Postoje 4 verzije (`v1`, `v2`, `v3`, `v4`) i svaka verzija predsavlja nadogradnju prethodne.
+- Implementacija operatora je dostupna #link("https://github.com/DanijelRadakovic/dojo-operator")[ovde]. Postoje 4 verzije (`v0.1.0`, `v0.2.0`, `v0.3.0`, `v0.4.0`) i svaka verzija predsavlja nadogradnju prethodne.
 
 == Podešavanje okruženja
 
@@ -457,7 +457,7 @@ func (r *DojoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 - Na onsovu `name` i `namespace` moramo da dobavimo kompletan objekat iz klastera. Kad je objekat dobavljen, treba ga procesirati na osnovu `Spec` i `Status` vrednosti objekta.
 
-== Implementacija kontolera (v1)
+== Implementacija kontolera (v0.1.0)
 
 - Dobavljanje se radi pomoću `r.Get(ctx, req.NamespacedName, &corev1.Dojo)`.
 
@@ -561,7 +561,7 @@ CredentialsRef: {dojo default}
 - Primeniti ih na cluster pomoću: `kubectl apply -f config/samples/core_v1_dojo.yaml`.
 - Ili koristiti kustomize: `kubectl apply -k config/samples`.
 
-= Dojo operator v2
+= Dojo operator v0.2.0
 
 == Implementacija operatora
 
@@ -593,7 +593,7 @@ CredentialsRef: {dojo default}
 
 - Na primer, izršavamo _reconcile_ petlju i prilikom izvršavanja se dese 5 promena objekta (npr. korisnik je pomoću `kubectl` 5 puta izmenilo objekat). Ne interesuje nas prethodne 4 promene, intereseuje nas samo poslednja.
 
-- Pogledati Reconciler #link("https://github.com/DanijelRadakovic/dojo-operator/blob/v2/internal/controller/dojo_controller.go#L74")[implementaciju] (dodatna pojašnjenja u vezi implementacije su na narednim slajdovima).
+- Pogledati Reconciler #link("https://github.com/DanijelRadakovic/dojo-operator/blob/v0.2.0/internal/controller/dojo_controller.go#L75")[implementaciju] (dodatna pojašnjenja u vezi implementacije su na narednim slajdovima).
 
 == Implementacija operatora
 
@@ -678,11 +678,21 @@ CredentialsRef: {dojo default}
 
 == Implementacija operatora
 
-- S obzrim na to da API Server radi _broadcast_ može se deisti da keš nema poslednju verziju objekta prilikom izvršavanja _reconcile_ petlje i da dođe do `409 Conflict` greške ukoliko se u toj iteraciji petlje radi `r.Update()`.
+- S obzirom na to da API Server radi _broadcast_ može se desiti da keš nema poslednju verziju objekta prilikom izvršavanja _reconcile_ petlje i da dođe do `409 Conflict` greške ukoliko se u toj iteraciji petlje radi `r.Update()`.
 
 - Postoji način da se objekat direktno dobavi sa API Servera: `r.APIReader`. Međutim, ovaj način komunikacije ne treba uzlopotrebljavati kako ne bi udarili u _rate limit_ API Servera.
 
 - Rate limit se može konfigurisati prilikom kreiranja klastera pomoću `k3d`: `--max-requests-inflight, Default: 400` #link("https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/")[(doc)]
+
+== Implementacija operatora
+
+- Kontroleri koriste keš za dovaljenje objekata. Prilikom dobavljanja objekta iz keša radi se duboka kopija objekta i daje na korišćenje kontolerima kako bi se sprečilo da kontroleri direktno menjaju objekat u kešu. 
+
+- Na ovaj način sprečavaju se konflikti kada kontroleri u _reconcile_ petljama menjaju objekte jer rade sa kopijom.
+
+- Zbog toga Kubebuilder pomoću `make generate` izgeneriše `api/v1/zz_generated_deepcopy.go` fajl u kojem se nalazi logika dubokog kopirnaja svih _custom_ resurasa.
+
+- Takođe, da bi nešto bilo objekat u Kubernetesu mora da implementira `DeepCopyObject` metodu #link("https://pkg.go.dev/k8s.io/apimachinery@v0.35.2/pkg/runtime#Object")[(docs)].
 
 == Implementacija operatora
 
@@ -1201,13 +1211,13 @@ if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Dojo{},
 
 - Za kontrolera od interesa su samo UPDATE događaji i treba prosiširi logiku da proveri sadžaj Secret objekta i izmeni po potrebi. Takođe neophodno je restartovati Podove ako bi koristili nov sadržaj Secret objekta.
 
-- Za DELETE događaje ne procesiramo jer nemamo adekvatno rešenje. Aplikacija jednostavno neće raditi kada se obriše CNPG Secret objekat.
+- DELETE događaje ne procesiramo jer nemamo adekvatno rešenje. Aplikacija jednostavno neće raditi kada se obriše CNPG Secret objekat.
 
 == Implementacija operatora
 
 - Obratiti pažnju da su neophodne permisije za gledanje i upravljanje Secret resursom.
 
-- Reconciler treba anotirati RBAC markup-om:
+- Reconciler treba anotirati RBAC _markup_-om:
 
 ```go
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;
@@ -1220,7 +1230,7 @@ if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Dojo{},
 
 - Prilikom deployment-a operatora, za permsije se koriste resursi definisani u `config/rbac` folderu. 
 
-- Ukoliko se u tim resursima ne nalaze odgovaruće permisije genersiane pomoću RBAC markup-a i `make manifest`, operator neće raditi.
+- Ukoliko se u tim resursima ne nalaze odgovaruće permisije genersiane pomoću RBAC _markup_-a i `make manifest`, operator neće raditi.
 
 == Pisanje testova
 
@@ -1232,9 +1242,75 @@ if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Dojo{},
 
 - Jedno od bithnijih ograničenja je to što nije podržano brisanje _namespace_-a pa je se svaki test mora izvršavati u posebnom _namespace_-u.
 
-== Dodatna pojašnjenja
+== Kreiranje i pablišovanje kontejner slika
 
-- zasto se genire copy i zbog cega je bitno
+- Namestiti kredencijale za DockerHub nalog:
+
+```bash
+docker login
+```
+
+- Kreiranje i pablišovanje kontejner slike operatora:
+
+```bash
+make docker-buildx IMG=danijelradakovic/dojo-operator:0.4.0
+```
+
+- Slika je dostupna #link("https://hub.docker.com/repository/docker/danijelradakovic/dojo-operator/tags")[ovde].
+
+== Kustomize deployment
+
+- Deployment pomoću Kustomize:
+
+```bash
+make deploy IMG=danijelradakovic/dojo-operator:0.4.0
+```
+
+```
+$ kubectl get -n dojo-operator-system all
+NAME                                   READY   STATUS    RESTARTS   AGE
+pod/dojo-controller-manager   1/1     Running   0          28m
+
+NAME                                      READY UP-TO-DATE AVAILABLE AGE
+deployment.apps/dojo-controller-manager   1/1   1          1         43m
+
+NAME                                      DESIRED   CURRENT   READY   AGE
+replicaset.apps/dojo-controller-manager   1         1         1       43m
+```
+
+== Kustomize deployment
+
+- Komanda `make deploy` će izgenrisati `config/manager/manager.yaml` fajl koji se koristi za konfiguraciju Deployment operatora.
+
+- Sve ostale izmene treba kreirati u `/config/default` folderu.
+
+- Deinstlacija operatora pomoću Kustomize:
+
+```bash
+make undeploy
+```
+
+- U oba slučaja koristi kredencijale iz `~/.kube/config`.
+
+
+== Helm deployment
+
+```bash
+make build-installer IMG=danijelradakovic/dojo-operator:0.4.0
+kubebuilder edit --plugins=helm/v2-alpha
+# Za sve naredne izmene treba koristi --force opciju
+kubebuilder edit --plugins=helm/v2-alpha --force
+```
+
+- Chart se generiše u `dist/chart` folderu.
+
+- Deployemnt operatora koristeći Helm:
+
+```bash
+helm upgrade --install dojo-operator ./dist/chart \
+  --namespace dojo-operator-system \
+  --create-namespace
+```
 
 == Discord intergracija
 
